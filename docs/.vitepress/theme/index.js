@@ -1,5 +1,9 @@
 import DefaultTheme from "vitepress/theme";
+// import demo from "vitepress-demoblock/demo.vue"
 
 export default {
-  ...DefaultTheme
+  ...DefaultTheme,
+  enhanceApp({ app }) {
+    // app.component("demo", demo)
+  }
 };

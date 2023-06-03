@@ -4,11 +4,14 @@
   "main": "index.js",
   "license": "MIT",
   "scripts": {
-    "dev": "vitepress dev docs",
+    "dev": "vitepress dev docs --port 8182",
     "build": "vitepress build docs",
     "serve": "vitepress serve docs"
   },
   "devDependencies": {
     "vitepress": "^1.0.0-beta.1"
+  },
+  "dependencies": {
+    "vitepress-demoblock": "^1.0.4"
   }
 }
