@@ -1,1 +1,0 @@
-import{_ as e,o as t,c as a,z as n}from"./chunks/framework.4afe7240.js";const x=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"index.md","filePath":"index.md"}'),o={name:"index.md"},s=n("p",null,"首页",-1),r=[s];function c(d,i,_,p,l,m){return t(),a("div",null,r)}const h=e(o,[["render",c]]);export{x as __pageData,h as default};
