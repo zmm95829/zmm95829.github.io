@@ -14,8 +14,17 @@ export default {
           { text: 'css', link: '/' },
           { text: 'preprocessor', link: 'http://www.baidu.com' }
         ]
-      }
+      },
+      { text: '综合案例', link: '/htmlJsCss/', activeMatch: '/htmlJsCss' },
     ],
+    sidebar: {
+      "/htmlJsCss/": [
+        {
+          text: '生成目录滚动高亮',
+          link: "/htmlJsCss/生成目录滚动高亮"
+        }
+      ]
+    },
     socialLinks: [
       { icon: "github", link: "https://github.com" },
     ],
