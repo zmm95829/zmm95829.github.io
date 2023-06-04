@@ -1,0 +1,1 @@
+import{_ as e,o as s,c as t,z as a}from"./chunks/framework.e7976ef2.js";const x=JSON.parse('{"title":"","description":"","frontmatter":{},"headers":[],"relativePath":"css/index.md","filePath":"css/index.md"}'),n={name:"css/index.md"},c=a("p",null,"css 相关",-1),o=[c];function r(d,i,_,p,l,m){return s(),t("div",null,o)}const h=e(n,[["render",r]]);export{x as __pageData,h as default};
