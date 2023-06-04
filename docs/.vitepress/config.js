@@ -1,4 +1,6 @@
 import demoblock from './lib/vitepress-demoblock';
+import getSidebar from "./utils/configHelper";
+const [nav, sidebar] = getSidebar();
 export default {
   title: "zmm's notes",
   description: "zmm的笔记",
@@ -6,27 +8,10 @@ export default {
     ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
   themeConfig: {
-    nav: [
-      { text: 'js', link: '/js/', activeMatch: '/js' },
-      {
-        text: 'css',
-        items: [
-          { text: 'css', link: '/' },
-          { text: 'preprocessor', link: 'http://www.baidu.com' }
-        ]
-      },
-      { text: '综合案例', link: '/htmlJsCss/', activeMatch: '/htmlJsCss' },
-    ],
-    sidebar: {
-      "/htmlJsCss/": [
-        {
-          text: '生成目录滚动高亮',
-          link: "/htmlJsCss/生成目录滚动高亮"
-        }
-      ]
-    },
+    nav,
+    sidebar,
     socialLinks: [
-      { icon: "github", link: "https://github.com" },
+      { icon: "github", link: "https://github.com/zmm95829/zmm95829.github.io/tree/note-pages" },
     ],
     docFooter: { prev: '上一篇', next: '下一篇' },
     footer: {
