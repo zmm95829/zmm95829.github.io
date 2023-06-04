@@ -1,4 +1,4 @@
-// import demoblock from 'vitepress-demoblock';
+import demoblock from './lib/vitepress-demoblock';
 export default {
   title: "zmm's notes",
   description: "zmm的笔记",
@@ -34,9 +34,9 @@ export default {
       copyright: "Copyright @2023-present zmm"
     }
   },
-  // markdown: {
-  //   config: (md) => {
-  //     md.use(demoblock)
-  //   }
-  // }
+  markdown: {
+    config: (md) => {
+      md.use(demoblock)
+    }
+  }
 }

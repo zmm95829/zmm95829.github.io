@@ -35,6 +35,11 @@ features:
     link: 进入
     linkText: 了解更多
   - icon: 📖
+    title: 综合案例
+    details: 综合案例
+    link: htmlJsCss/index
+    linkText: 了解更多
+  - icon: 📖
     title: 其他
     details: 其他
     link: 进入
