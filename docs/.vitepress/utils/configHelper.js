@@ -42,10 +42,15 @@ function getPages(currentPath, pLink) {
     const itemPath = path.resolve(currentPath, item);
     if (!isIgnore(item)) {
       if (isDirectory(itemPath)) {
-        re.push({
-          text: keyMap[item],
+        const pushItem = {
+          text: keyMap[item] || item,
           items: getPages(itemPath, pLink + item + "/")
-        });
+        };
+        if (pushItem.items.length === 0) {
+          pushItem.link = pLink + item + "/";
+          delete pushItem.items;
+        }
+        re.push(pushItem);
       } else {
         const text = removeSuffix(item);
 

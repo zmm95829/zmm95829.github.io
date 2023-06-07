@@ -13,5 +13,7 @@
     "less": "^4.1.3",
     "vitepress": "^1.0.0-beta.1"
   },
-  "dependencies": {}
+  "dependencies": {
+    "element-plus": "^2.3.6"
+  }
 }

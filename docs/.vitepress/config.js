@@ -7,7 +7,14 @@ export default {
   head: [
     ['link', { rel: 'icon', href: '/favicon.ico' }]
   ],
+  lastUpdated: true,
   themeConfig: {
+    logo: '/favicon.ico',
+    lastUpdatedText: "最后更新时间",
+    outline: {
+      level: [2, 6],
+      label: '目录'
+    },
     nav,
     sidebar,
     socialLinks: [
