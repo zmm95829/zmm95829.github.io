@@ -98,42 +98,4 @@ export default {
     });
   }
 };
-</script>
-<style lang="less">
-// 不能写 scoped，不然 js 生成的内容不生效
-.auto-toc-scroll {
-  position: relative;
-  ul.auto-toc-container {
-    list-style: none;
-    position: fixed;
-    right: 80px;
-    top: 80px;
-
-    .auto-toc-item {
-      height: 32px;
-      line-height: 32px;
-      border-left: 1px solid #ddd;
-      cursor: pointer;
-      margin-top: 0;
-      &.active {
-        border-left: 2px solid #e71818;
-        transform: translateX(-0.5px);
-        color: #e71818;
-      }
-    }
-  }
-}
-</style>
-<style scoped lang="less">
-.auto-toc-scroll {
-  h1,
-  h2,
-  h3,
-  h4,
-  h5,
-  h6 {
-    margin-bottom: 800px;
-    border-top: none;
-  }
-}
-</style>
+    
