@@ -60,16 +60,32 @@ src：源文件存放目录
 | cargo build --release     | 构建发布的项目，会优化编译项目（target/release 下）          |
 | .\target\debug\目录名.exe | 运行可执行文件                                               |
 | cargo run                 | 编译并运行（源文件修改：编译并运行；未修改，之间运行之前编译好的）（target/debug 下） |
+| cargo run -p 包名         | 工作区间运行某个包                                           |
 | cargo check               | 检测当前代码是否可编译（检查错误）                           |
 | cargo update              | 升级依赖版本，但仍然在版本规则内                             |
+| cargo doc                 | 由 Rust 分发的工具 rustdoc 生成文档注释的 HTML 文档，并将生成的 HTML 文档放入 target/doc 目录 |
 | cargo doc --open          | 构建所有本地依赖提供的文档，并在浏览器中打开                 |
 | cargo test                | 运行测试，多个测试时默认是并行运行，并且会将打印默认截取只会输出是否测试通过的结果<br />cargo test -- --test-threads=1 将测试线程设置为 1<br />cargo test -- --show-output 测试成功的话，如果有打印，把打印也显示出来<br />cargo test fn_name 运行单个测试<br />cargo test name 运行含有[name]作为函数名的n个测试<br />cargo test -- --ignored 运行被忽略的测试<br />cargo test -- --include-ignored 无论是不是被忽略的测试都要运行 |
+| cargo test -p 包名        | 工作区间下运行某个包的测试                                   |
 | cargo test --help         | 提示 cargo test 的有关参数                                   |
 | cargo test -- --help      | 提示在分隔符之后使用的有关参数                               |
+| cargo publish             | 发布                                                         |
+| cargo publish -p 包名     | 工作区间下发布某个包                                         |
 
 #### Cargo.toml
 
+```js
+[profile.dev]
+opt-level=0
+[profile.release]
+opt-level=3
+```
 
+cargo build 使用测试环境配置
+
+cargo build --release 使用 正式环境的
+
+- opt-level：对代码进行何种程度的优化，0 - 3，越高的优化级别需要更多的时间编译
 
 # 语法
 
@@ -368,6 +384,16 @@ let mut str1 = String::new();
 
 [文档注释](https://kaisery.github.io/trpl-zh-cn/ch14-02-publishing-to-crates-io.html#%E6%B3%A8%E9%87%8A%E5%8C%85%E5%90%AB%E9%A1%B9%E7%9A%84%E7%BB%93%E6%9E%84)
 
+```
+/// 文档注释
+/// 在文档的内容之前
+/// 三个斜杠
+```
+
+可以使用命令 cargo doc --open 将文档注释生产为 html，具体可参考发布 crate 内容
+
+
+
 
 
 ## 控制流
@@ -504,7 +530,7 @@ rust 通过所有权系统管理内存，编译器在编译时会根据一系列
 
 ## 所有权规则
 
-- Rust 中的每一个值都有一个 所有者（owner）
+- Rust 中的每一个值都有一个所有者（owner）
 - 值在任一时刻有且只有一个所有者
 - 当所有者（变量）离开作用域，这个值将被丢弃【变量作用域】
 
@@ -577,7 +603,11 @@ fn test_fn(str1: &String) {
 
 ```
 
-- 默认不允许修改引用的值
+- 创建一个引用的行为称为借用
+
+  - 借用不拥有所有权
+
+  - 默认不允许修改引用的值
 
 - 可变引用：在 & 后添加关键词 mut
   ```js
@@ -1963,6 +1993,673 @@ fn main() {
 
 大胆的使用迭代器和闭包，它们使得代码看起来更高级，但并不为此引入运行时性能损失
 
+# 发布 crate
+
+1. 在 [crates.io](https://crates.io/) 上注册账号，可使用 github 登录
+
+2. 在账户设置页面并获取 API token
+
+3. 运行 cargo login api_token 进行登录，这个 token 会储存在本地的 `~/.cargo/credentials` 文件中【token 应私有】
+
+4. 准备发布的 crate 内容
+
+5. 给 crate 添加元信息可以帮助你的 crate 更容易被发现和使用，在 Cargo.toml 中
+   ```
+   [package]
+   name = "project_name"
+   version = "0.1.0"
+   edition = "2021"
+   description = "A fun game where you guess what number the computer has chosen."
+   license = "MIT OR Apache-2.0"
+   
+   [dependencies]
+   
+   ```
+
+   - name 需要唯一
+
+6. 发布：cargo publish
+
+   - 发布是永久性的，对应版本不可能被覆盖，其代码也不可能被删除
+   - 如果是发布新版本，则使用语义化规则升级版本号 version
+
+7. 撤回某个版本：cargo yank --vers 1.0.1
+
+   - 撤回则所有带有 Cargo.lock 的项目的依赖不会被破坏，即现存此依赖的项目仍然能够下载和依赖这个版本
+   - 任何新生成的 Cargo.lock 将不能使用被撤回的版本
+   - 撤销撤回操作：cargo yank --vers 1.0.1 --undo
+
+# 工作空间 - 管理多个协同开发的包
+
+工作区间下有一个二进制项目和一个库
+
+```
+test
+├─ adder
+│  ├─ Cargo.toml
+│  └─ src
+│     └─ main.rs
+├─ add_one
+│  ├─ Cargo.toml
+│  └─ src
+│     └─ lib.rs
+├─ Cargo.lock
+├─ Cargo.toml
+└─ target
+```
+
+1. 新建 test 目录当做项目根目录
+
+2. 根目录下新建 Cargo.toml
+
+   ```js
+   [workspace]
+   
+   members = [
+     "adder",
+     "add_one"
+   ]
+   ```
+
+3. 运行 cargo new adder，创建 adder 这个二进制项目，src 下是 main.rs
+
+4. 运行 cargo new --lib add_one，创建 add_one 这个库，src 下是 lib.rs
+
+5. 二进制项目与库的 toml 初始如下
+   ```
+   [package]
+   name = "add_one"
+   version = "0.1.0"
+   edition = "2021"
+   
+   [dependencies]
+   ```
+
+6. 在二进制项目中引入库函数使用
+
+   - adder/Cargo.toml 中引入依赖
+     ```
+     [dependencies]
+     add_one = { path = "../add_one" }
+     ```
+
+   - adder/src/main.rs 中使用库函数
+     ```
+     use add_one;
+     
+     fn main() {
+         let num = 10;
+         println!("Hello, world! {num} plus one is {}!", add_one::add_one(num));
+     }
+     ```
+
+   - add_one/src/lib.rs 中的函数
+     ```
+     pub fn add_one(x: i32) -> i32 {
+         x + 1
+     }
+     ```
+
+   - 构建工作空间 cargo build，构建结果是在根目录下的 target 中 -- 共享一个 target，避免重复构建
+
+     - 就算在各自的包下运行 cargo build，构建结果也是在根目录下的 target 中
+
+   - 运行二进制项目：cargo run -p adder
+
+7. 给库添加测试，add_one/src/lib.rs
+   ```
+   pub fn add_one(x: i32) -> i32 {
+       x + 1
+   }
+   
+   #[cfg(test)]
+   mod tests {
+       use super::*;
+   
+       #[test]
+       fn it_works() {
+           assert_eq!(3, add_one(2));
+       }
+   }
+   ```
+
+   - 运行工作区间所有测试：cargo test
+   - 运行某个包下的测试：cargo test -p add_one
+
+# 指针
+
+> 指针：一个包含内存地址的变量
+
+指针：除了引用数据没有任何其他特殊功能，也没有额外开销
+
+- 引用，以 & 为标志
+
+智能指针：一类数据结构，表现类似指针；拥有额外的元数据和功能
+
+- String
+- Vec<T>
+- Box<T>，用于在堆上分配值
+- Rc<T>，一个引用计数类型，其数据可以有多个所有者
+- Ref<T> 和 RefMut<T>，通过 RefCell<T> 访问。（ RefCell<T> 是一个在运行时而不是在编译时执行借用规则的类型）
+
+## 指针 vs 智能指针
+
+- 引用是一类只借用数据的指针
+- 在大部分情况下，智能指针拥有它们指向的数据
+
+## 结构体 vs 智能指针
+
+智能指针通常使用结构体实现
+
+智能指针不同于结构体的地方在于其实现了 Deref 和 Drop trait
+
+- Deref trait：允许智能指针结构体实例表现的像引用一样，这样就可以编写既用于引用、又用于智能指针的代码
+- Drop trait：允许自定义当智能指针离开作用域时运行的代码
+
+- 
+
+## 递归数据
+
+`Box<T>`，`Rc<T>` 或 `RefCell<T>`：
+
+- `Rc<T>` 允许相同数据有多个所有者；`Box<T>` 和 `RefCell<T>` 有单一所有者。
+- `Box<T>` 允许在编译时执行不可变或可变借用检查；`Rc<T>`仅允许在编译时执行不可变借用检查；`RefCell<T>` 允许在运行时执行不可变或可变借用检查。
+- 因为 `RefCell<T>` 允许在运行时执行可变借用检查，所以我们可以在即便 `RefCell<T>` 自身是不可变的情况下修改其内部的值
+
+### 智能指针 box 定义递归
+
+> 最简单直接的智能指针 box
+
+- 类型是 Box<T>
+- box 本身位于栈上，指向的数据位于堆上
+- 可以用于定义递归数据
+
+使用智能指针 box 定义递归数据类型
+
+```js
+enum List {
+    // Cons 存放一个 Box 所以 List 不是无限大小的了
+    Cons(i32, Box<List>),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+
+fn main() {
+    let list = Cons(1, Box::new(Cons(2, Box::new(Cons(3, Box::new(Nil))))));
+}
+```
+
+- Nil：代表递归的终止条件，宣布列表的终止
+
+- 上面的 Box 能正常编译，rust 能计算出类型大小，而不使用 box 的话没法计算，编译报错
+  ```js
+  use crate::List::{Cons, Nil};
+  
+  fn main() {
+      let list = Cons(1, Cons(2, Cons(3, Nil)));
+  }
+  ```
+
+### 引用计数智能指针Rc<T> 共享数据
+
+> 记录一个值的引用数量来知晓这个值是否仍在被使用
+>
+> Rc<T> 只能用于单线程场景
+>
+> 通过不可变引用， Rc<T> 允许在程序的多个部分之间只读地共享数据【不允许可变引用】
+
+示例：递归数据 a，递归数据 b、c 中有一部分是 a
+
+```js
+enum List {
+    Cons(i32, Box<List>),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+
+fn main() {
+    let a = Cons(5, Box::new(Cons(10, Box::new(Nil))));
+    let b = Cons(3, Box::new(a)); // a 被移动进了 b 这样 b 就拥有了 a
+    let c = Cons(4, Box::new(a)); // c 不能再使用 a 了
+}
+```
+
+Box 改为 Rc
+
+```js
+enum List {
+    // 每一个 Cons 变量都包含一个值和一个指向 List 的 Rc<T>
+    Cons(i32, Rc<List>),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+use std::rc::Rc;
+
+fn main() {
+    let a = Rc::new(Cons(5, Rc::new(Cons(10, Rc::new(Nil)))));
+	// 克隆 a 所包含的 Rc<List>，这会将引用计数从 1 增加到 2 并允许 a 和 b 共享 Rc<List> 中数据的所有权
+    let b = Cons(3, Rc::clone(&a));
+    // 克隆 a，将引用计数从 2 增加为 3
+    let c = Cons(4, Rc::clone(&a));
+}
+```
+
+- Rc::clone(&a) 也可以写成 a.clone，前者是 rust 习惯写法
+- Rc::clone 不是进行深拷贝，而是增加引用计数，不会花费多少时间
+- 每次调用 Rc::clone，Rc<List> 中数据的引用计数都会增加，直到有零个引用之前其数据都不会被清理
+- 获取引用计数：Rc::strong_count(&a)
+- Rc<T> 允许一个值有多个所有者，引用计数则确保只要任何所有者依然存在其值也保持有效
+
+### RefCell<T> 和内部可变性模式
+
+> 内部可变性：一个设计模式
+>
+> - 它允许你即使在有不可变引用时也可以改变数据（在不可变值内部改变值就是内部可变性模式）
+> - 使用 unsafe 代码来模糊 Rust 通常的可变性和借用规则
+
+>  RefCell<T> 代表其数据的唯一的所有权
+>
+> RefCell<T> 只能用于单线程场景
+
+借用规则：
+
+- 在任意给定时刻，只能拥有一个可变引用或任意数量的不可变引用 之一（而不是两者）
+- 引用必须总是有效的
+
+对于 RefCell<T>，这些不可变性作用于运行时；如果违反这些规则程序会 panic 并退出
+
+对于引用和 Box<T>，借用规则的不可变性作用于编译时；如果违反这些规则，会得到一个编译错误
+
+#### 内部可变性：不可变值的可变借用
+
+```js
+fn main() {
+    let x = 5;
+    // 当有一个不可变值时，不能可变地借用它
+    let y = &mut x;
+}
+```
+
+在外部值被认为是不可变的情况下修改内部值
+
+```js
+pub trait Messenger {
+    fn send(&self, msg: &str);
+}
+
+pub struct LimitTracker<'a, T: Messenger> {
+    messenger: &'a T,
+    value: usize,
+    max: usize,
+}
+
+impl<'a, T> LimitTracker<'a, T>
+where
+    T: Messenger,
+{
+    pub fn new(messenger: &'a T, max: usize) -> LimitTracker<'a, T> {
+        LimitTracker {
+            messenger,
+            value: 0,
+            max,
+        }
+    }
+
+    pub fn set_value(&mut self, value: usize) {
+        self.value = value;
+
+        let percentage_of_max = self.value as f64 / self.max as f64;
+
+        if percentage_of_max >= 1.0 {
+            self.messenger.send("Error: You are over your quota!");
+        } else if percentage_of_max >= 0.9 {
+            self.messenger
+                .send("Urgent warning: You've used up over 90% of your quota!");
+        } else if percentage_of_max >= 0.75 {
+            self.messenger
+                .send("Warning: You've used up over 75% of your quota!");
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::RefCell;
+
+    struct MockMessenger {
+        sent_messages: RefCell<Vec<String>>,
+    }
+
+    impl MockMessenger {
+        fn new() -> MockMessenger {
+            MockMessenger {
+                sent_messages: RefCell::new(vec![]),
+            }
+        }
+    }
+
+    impl Messenger for MockMessenger {
+        fn send(&self, message: &str) {
+            self.sent_messages.borrow_mut().push(String::from(message));
+        }
+    }
+
+    #[test]
+    fn it_sends_an_over_75_percent_warning_message() {
+        let mock_messenger = MockMessenger::new();
+        let mut limit_tracker = LimitTracker::new(&mock_messenger, 100);
+
+        limit_tracker.set_value(80);
+
+        assert_eq!(mock_messenger.sent_messages.borrow().len(), 1);
+    }
+}
+```
+
+
+
+- borrow 方法返回 Ref<T> 类型的智能指针
+- borrow_mut 方法返回 RefMut<T> 类型的智能指针
+- RefCell<T> 记录当前有多少个活动的 Ref<T> 和 RefMut<T> 智能指针。每次调用 borrow，RefCell<T> 将活动的不可变借用计数加一
+- RefCell<T> 在任何时候只允许有多个不可变借用或一个可变借用
+
+#### 使用 `Rc<RefCell<i32>>` 创建可以修改的 `List`
+
+```js
+#[derive(Debug)]
+enum List {
+    Cons(Rc<RefCell<i32>>, Rc<List>),
+    Nil,
+}
+
+use crate::List::{Cons, Nil};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+fn main() {
+    let value = Rc::new(RefCell::new(5));
+
+    // a 和 value 都拥有 5 的所有权，不是所有权移动或者借用
+    let a = Rc::new(Cons(Rc::clone(&value), Rc::new(Nil)));
+
+    let b = Cons(Rc::new(RefCell::new(3)), Rc::clone(&a));
+    let c = Cons(Rc::new(RefCell::new(4)), Rc::clone(&a));
+
+    // 对 value 调用了 borrow_mut，返回 RefMut<T> 智能指针
+    // 使用了自动解引用来解引用 Rc<T> 以获取其内部的 RefCell<T> 值
+    *value.borrow_mut() += 10;
+
+    println!("a after = {:?}", a);
+    println!("b after = {:?}", b);
+    println!("c after = {:?}", c);
+    // a after = Cons(RefCell { value: 15 }, Nil)
+    // b after = Cons(RefCell { value: 3 }, Cons(RefCell { value: 15 }, Nil))
+    // c after = Cons(RefCell { value: 4 }, Cons(RefCell { value: 15 }, Nil))
+}
+```
+
+### 引用循环
+
+```js
+use crate::List::{Cons, Nil};
+use std::cell::RefCell;
+use std::rc::Rc;
+
+#[derive(Debug)]
+enum List {
+    Cons(i32, RefCell<Rc<List>>),
+    Nil,
+}
+
+impl List {
+    fn tail(&self) -> Option<&RefCell<Rc<List>>> {
+        match self {
+            Cons(_, item) => Some(item),
+            Nil => None,
+        }
+    }
+}
+fn main() {
+    let a = Rc::new(Cons(5, RefCell::new(Rc::new(Nil))));
+
+    println!("a initial rc count = {}", Rc::strong_count(&a));
+    println!("a next item = {:?}", a.tail());
+
+    let b = Rc::new(Cons(10, RefCell::new(Rc::clone(&a))));
+
+    println!("a rc count after b creation = {}", Rc::strong_count(&a));
+    println!("b initial rc count = {}", Rc::strong_count(&b));
+    println!("b next item = {:?}", b.tail());
+
+    if let Some(link) = a.tail() {
+        *link.borrow_mut() = Rc::clone(&b);
+    }
+
+    println!("b rc count after changing a = {}", Rc::strong_count(&b));
+    println!("a rc count after changing a = {}", Rc::strong_count(&a));
+    
+    // 这里会循环打印，内存溢出
+    println!("a next item = {:?}", a.tail());
+}
+```
+
+#### 避免引用循环：将 `Rc<T>` 变为 `Weak<T>`
+
+- Rc::clone 会增加 Rc<T> 实例的 strong_count，只在其 strong_count 为 0 时才会被清理的 Rc<T> 实例
+- 调用 Rc::downgrade 并传递 Rc<T> 实例的引用可以创建其值的弱引用
+  - weak_count 加 1，记录其存在多少个 Weak<T> 引用；strong_count 不变
+  - 强引用代表如何共享 Rc<T> 实例的所有权
+  - 弱引用并不属于所有权关系，当 Rc<T> 实例被清理时其计数没有影响
+  - weak_count 无需计数为 0 就能使 Rc<T> 实例被清理，不会造成引用循环，任何弱引用的循环会在其相关的强引用计数为 0 时被打断
+
+#### 树形数据结构
+
+```js
+use std::cell::RefCell;
+use std::rc::Rc;
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    children: RefCell<Vec<Rc<Node>>>,
+}
+fn main() {
+    let leaf = Rc::new(Node {
+        value: 3,
+        children: RefCell::new(vec![]),
+    });
+	// 可以通过 branch.children 从 branch 中获得 leaf
+    let branch = Rc::new(Node {
+        value: 5,
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+}
+```
+
+使用 Weak<T> 增加从子到父的引用
+
+```js
+use std::cell::RefCell;
+use std::rc::{Rc, Weak};
+
+#[derive(Debug)]
+struct Node {
+    value: i32,
+    parent: RefCell<Weak<Node>>,
+    children: RefCell<Vec<Rc<Node>>>,
+}
+fn main() {
+    let leaf = Rc::new(Node {
+        value: 3,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![]),
+    });
+	// leaf: strong_count = 1, weak_count = 0
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+    let branch = Rc::new(Node {
+        value: 5,
+        parent: RefCell::new(Weak::new()),
+        children: RefCell::new(vec![Rc::clone(&leaf)]),
+    });
+
+	// branch: strong_count = 1, weak_count = 0
+
+	// 子节点就能够引用其父节点，但不拥有其父节点
+    *leaf.parent.borrow_mut() = Rc::downgrade(&branch);
+
+    println!("leaf parent = {:?}", leaf.parent.borrow().upgrade());
+
+	// branch: strong_count = 1, weak_count = 1（因为 leaf.parent 通过 Weak<Node> 指向 branch）
+    // leaf: strong_count = 2, weak_count = 0（branch 的 branch.children 中储存了 leaf 的 Rc<Node> 的拷贝）
+}
+```
+
+打印
+
+```
+leaf parent = None
+leaf parent = Some(Node { value: 5, parent: RefCell { value: (Weak) }, children: RefCell { value: [Node { value: 3, parent: RefCell { value: (Weak) }, children: RefCell { value: [] } }] } })
+```
+
+
+
+## Deref trait 将智能指针当做常规引用处理
+
+实现 Deref trait 允许重载解引用运算符 *
+
+```js
+fn main() {
+    // 变量 x 存放了一个 i32 值 5
+    let x = 5;
+    // y 等于 x 的一个引用
+    let y = &x;
+
+    assert_eq!(5, x);
+    // *y 来追踪引用所指向的值（也就是解引用）
+    // 解引用了 y，就可以访问 y 所指向的整型值并可以与 5 做比较
+    assert_eq!(5, *y);
+    // assert_eq!(5, y); 数字的引用与数字是不同类型，不允许比较
+}
+```
+
+像引用一样使用 Box<T>
+
+```js
+fn main() {
+    let x = 5;
+    // 将 y 设置为一个指向 x 值拷贝的 Box<T> 实例，而不是指向 x 值的引用
+    let y = Box::new(x);
+
+    assert_eq!(5, x);
+    // 使用解引用运算符追踪 Box<T> 的指针
+    assert_eq!(5, *y);
+}
+```
+
+### 自定义智能指针
+
+```js
+struct MyBox<T>(T);
+
+impl<T> MyBox<T> {
+    // 获取一个 T 类型的参数并返回一个存放传入值的 MyBox 实例
+    fn new(x: T) -> MyBox<T> {
+        MyBox(x)
+    }
+}
+```
+
+实现 Deref trait
+
+```js
+use std::ops::Deref;
+
+impl<T> Deref for MyBox<T> {
+    type Target = T;
+	// 实现名为 deref 的方法
+    fn deref(&self) -> &Self::Target {
+        // 借用 self 并返回一个内部数据的引用
+        // 返回了通过 * 运算符访问的值的引用
+        &self.0
+        // 如果直接返回值而不是值的引用，其值（的所有权）将被移出 self
+    }
+}
+```
+
+- `*`运算符：替换为先调用 deref 方法再进行普通解引用的操作 `*y => *(y.deref())`
+
+- 这里 MyBox 实现了 Deref trait，可以将 &Mybox<String> 类型的值作为实参，传给形参类型是 &str 的函数
+
+  - MyBox 的 deref 返回 &String
+
+  - 标准库中 String 上的 Deref 实现将返回 &str（字符串 slice）
+
+  - 也就是 Deref 可以实现函数和方法的隐式类型转换
+
+    ```js
+    fn hello(name: &str) {
+        println!("Hello, {name}!");
+    }
+    fn main() {
+        let m = MyBox::new(String::from("Rust"));
+        // 如果 MyBox 实现了 Deref
+        hello(&m);
+        // 如果 MyBox 没有实现 Deref，则需要这么调用
+        hello(&(*m)[..]);
+    }
+    ```
+
+像引用一样使用 MyBox<T>
+
+```js
+fn main() {
+    let x = 5;
+    let y = MyBox::new(x);
+
+    assert_eq!(5, x);
+    assert_eq!(5, *y);
+}
+```
+
+
+
+### Deref 强制类型转换
+
+实现了 Deref trait 的类型，作为实参传递给类型不同的形参时，有一系列 deref 方法被调用，进行类型转换
+
+进行 Deref 强制转换的场景
+
+- 当 T: Deref<Target=U> 时从 &T 到 &U
+- 当 T: DerefMut<Target=U> 时从 &mut T 到 &mut U
+- 当 T: Deref<Target=U> 时从 &mut T 到 &U
+
+## Drop Trait 清理代码
+
+> 允许在值要离开作用域时执行一些代码，代码被用于释放类似于文件或网络连接的资源
+
+- 要求实现一个叫做 drop 的方法，这个方法叫做析构函数（destructor），反义词对应创建实例的构造函数
+- 实例离开作用域 Rust 会自动调用 drop
+- 变量以被创建时相反的顺序被丢弃
+
+### 提前丢弃值
+
+- rust 不允许主动调用 Drop trait 的 drop 方法，因为 rust 会自动调用，导致重复
+- 可以使用 std::mem::dro 实现提前丢弃值，参数是希望强制丢弃的值
+
+
+
+# 并发和并行
+
+并发编程：程序的不同部分相互独立地执行
+
+并行编程：程序不同部分同时执行
+
 # 字典查阅
 
 ## 函数
@@ -1972,6 +2669,7 @@ fn main() {
   - &str
   - &'a str
   - 返回值的生命周期与参数 `contents` 的生命周期一样久
+- &(*m)[..]
 
 ## 遍历
 
