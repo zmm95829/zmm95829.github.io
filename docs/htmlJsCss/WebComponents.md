@@ -196,6 +196,18 @@
 
 ## 生命周期
 
+监控某个属性值的变化，触发事件
+
+```js
+constructor() {},
+static get observedAttributes() { return ["select-value"]; }
+attributeChangedCallback(name, oldValue, newValue) {
+if (name === "select-value" && oldValue !== newValue) {
+  this.shadowRoot.querySelector(".select-input").value = newValue;
+}
+}
+```
+
 
 
 
