@@ -1,0 +1,6 @@
+[workspace]
+
+members = [
+  "m_rules",
+  "i_entry"
+]
