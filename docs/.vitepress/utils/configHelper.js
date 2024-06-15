@@ -15,7 +15,8 @@ const root = {
   htmlJsCss: "综合案例",
   vue: "vue",
   framework: "框架",
-  other: "其他"
+  other: "其他",
+  地图: "地图"
 };
 
 const keyMap = {
@@ -51,7 +52,7 @@ function getPages(currentPath, pLink) {
           delete pushItem.items;
         }
         re.push(pushItem);
-      } else {
+      } else if (!item.endsWith(".vue")) {
         const text = removeSuffix(item);
 
         // 给 nav 设置默认跳转路径
