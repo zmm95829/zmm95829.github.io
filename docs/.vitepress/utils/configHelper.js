@@ -15,7 +15,8 @@ const root = {
   htmlJsCss: "综合案例",
   vue: "vue",
   framework: "框架",
-  other: "其他"
+  other: "其他",
+  tool: "工具"
 };
 
 const keyMap = {
@@ -26,7 +27,7 @@ const keyMap = {
 // 判断是否是文件夹
 const isDirectory = (path) => fs.lstatSync(path).isDirectory()
 // 该目录是否是被忽略的
-const isIgnore = (name) => name === "components" || name.endsWith(".assets");
+const isIgnore = (name) => name === "components" || name.endsWith(".assets") || name.startsWith("demo");
 
 const removeSuffix = (name) => name.slice(0, name.lastIndexOf("."));
 

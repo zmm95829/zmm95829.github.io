@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mammoth.js Example</title>
+  <script src="./mammoth.browser.min.js"></script>
+  <script src="./jszip.min.js"></script>
+  <script src="./beautify-html.min.js"></script>
+  <script src="./htmlToBeautify.js"></script>
+  <style>
+    h1 {
+      text-align: center;
+      margin-bottom: 100px;
+    }
+
+    :root {
+      --width: 500px;
+    }
+
+    body:not(.in-iframe) {
+      width: var(--width);
+      padding-left: calc((100% - var(--width)) / 2);
+      padding-right: calc((100% - var(--width)) / 2);
+      margin: 0;
+    }
+
+    #download {
+      float: right;
+    }
+  </style>
+</head>
+
+<body>
+  <h1>将 word 转为 html</h1>
+  <input type="file" id="upload" />
+  <button id="download">下载html及相关图片</button>
+  <div id="output" style="white-space: pre-wrap;"></div>
+
+  <script>
+    if (window.self !== window.top) {
+      document.body.classList.add("in-iframe")
+    }
+    let convertedHtml = "";
+    let images = {};
+    let isDowning = false;
+    let docName;
+
+    document.getElementById("upload").addEventListener("change", function (event) {
+      const file = event.target.files[0];
+      const reader = new FileReader();
+      docName = file.name.split(".")[0];
+
+      reader.onload = function (event) {
+        const arrayBuffer = event.target.result;
+        mammoth.convertToHtml({ arrayBuffer: arrayBuffer }, {
+          convertImage: mammoth.images.imgElement(function (image) {
+            return image.read("base64").then(function (imageBuffer) {
+              const imageId = "image" + Object.keys(images).length;
+              images[imageId] = imageBuffer;
+              return { src: imageId + ".png" };
+            });
+          })
+        })
+          .then(result => {
+            convertedHtml = result.value;
+
+            convertedHtml = htmlToBeautify(convertedHtml, html_beautify, docName);
+            // 一般调试时设置为 true 方便些
+            const needExportHtmlDemo = false;
+            if (needExportHtmlDemo) {
+              // 创建一个Blob对象
+              const blob = new Blob([convertedHtml], { type: 'text/html' });
+
+              // 创建一个链接元素
+              const link = document.createElement('a');
+              link.href = window.URL.createObjectURL(blob);
+              link.download = 'sample.html';
+
+              // 触发下载
+              link.click();
+
+              // 释放URL对象
+              window.URL.revokeObjectURL(link.href);
+              document.getElementById("output").innerHTML = new Date().toLocaleString() + `《${docName}》html 提取成功！` + "\n" + document.getElementById("output").innerHTML;
+            }
+          })
+          .catch(err => {
+            console.error("Conversion error: ", err);
+          });
+      };
+
+      reader.readAsArrayBuffer(file);
+    });
+
+    document.getElementById("download").addEventListener("click", function () {
+      if (convertedHtml) {
+        if (isDowning) {
+          document.getElementById("output").innerHTML = "正在下载中，请稍等..." + "\n" + document.getElementById("output").innerHTML;
+          return;
+        }
+        isDowning = true;
+        document.getElementById("output").innerHTML = new Date().toLocaleString() + `下载《${docName}》html及相关图片，正在准备中...` + "\n" + document.getElementById("output").innerHTML;
+        const zip = new JSZip();
+        const folder = zip.folder("output");
+        folder.file("index.html", convertedHtml);
+
+        for (const [imageId, imageBuffer] of Object.entries(images)) {
+          const imageData = atob(imageBuffer); // Decode base64
+          const uint8Array = new Uint8Array(imageData.length);
+          for (let i = 0; i < imageData.length; i++) {
+            uint8Array[i] = imageData.charCodeAt(i);
+          }
+          folder.file(imageId + ".png", uint8Array, { binary: true });
+        }
+
+        zip.generateAsync({ type: "blob" })
+          .then(function (content) {
+            const a = document.createElement("a");
+            const url = URL.createObjectURL(content);
+            a.href = url;
+            a.download = `${docName}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            document.getElementById("output").innerHTML = new Date().toLocaleString() + `下载《${docName}》html及相关图片，成功！` + "\n" + document.getElementById("output").innerHTML;
+          })
+          .catch(e => {
+            console.error("Error generating zip file: ", e);
+            document.getElementById("output").innerHTML = new Date().toLocaleString() + `下载《${docName}》html及相关图片，失败！请重试！` + "\n" + document.getElementById("output").innerHTML;
+          })
+          .finally(() => {
+            isDowning = false;
+          });
+      } else {
+        alert("没有可下载的内容，请确认是否导入了 word！");
+      }
+    });
+  </script>
+</body>
+
+</html>

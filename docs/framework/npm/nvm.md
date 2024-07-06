@@ -12,6 +12,7 @@ root: D:\nvm\nvm
 path: D:\nvm\nodejs
 node_mirror: https://npm.taobao.org/mirrors/node/
 npm_mirror: https://npm.taobao.org/mirrors/npm/
+注意：这里淘宝镜像已经从 https://registry.npm.taobao.org 改为 https://registry.npmmirror.com
 ```
 
 - 命令行中输入命令验证是否成功：nvm -v
