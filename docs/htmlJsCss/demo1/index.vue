@@ -122,18 +122,15 @@ onMounted(() => {
     }
     ulDom.appendChild(frag);
   }
-  console.log(getLyricArray());
 
   createLrcElements(doms.ul);
   // 歌词容器高度
   const containerHeight = doms.lyric.clientHeight;
   // li 的高度
   const liHeight = doms.ul.children[0].clientHeight;
-  console.log(containerHeight, liHeight);
   const maxOffset = doms.ul.clientHeight - doms.lyric.clientHeight;
   function setOffset() {
     const index = findIndex(doms.audio);
-    console.log(333333333333, index)
     let offset = liHeight * index + liHeight / 2 - containerHeight / 2;
     if (offset < 0) {
       offset = 0;
