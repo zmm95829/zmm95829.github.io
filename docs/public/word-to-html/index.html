@@ -50,7 +50,7 @@
     document.getElementById("upload").addEventListener("change", function (event) {
       const file = event.target.files[0];
       const reader = new FileReader();
-      docName = file.name.split(".")[0];
+      docName = file.name.split(".").slice(0, -1).join(".");
 
       reader.onload = function (event) {
         const arrayBuffer = event.target.result;
@@ -76,7 +76,7 @@
               // 创建一个链接元素
               const link = document.createElement('a');
               link.href = window.URL.createObjectURL(blob);
-              link.download = 'sample.html';
+              link.download = `${docName}.html`;
 
               // 触发下载
               link.click();

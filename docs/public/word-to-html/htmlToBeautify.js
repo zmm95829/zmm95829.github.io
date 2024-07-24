@@ -78,9 +78,20 @@ function htmlToBeautify(bodyContent, html_beautify, docName) {
     }
     
     /* 选择仅包含 img 的 p 标签 */
-    p:has(> img:only-child) {
+    p.has-only-img:has(> img:only-child) {
       text-align: center;
       text-indent: unset;
+    }
+
+    /* p 中有图片和文字内容 */
+    p:not(.has-only-img):has(> img:only-child) {
+      display: flex;
+      flex-direction: column;
+    }
+
+    p:not(.has-only-img):has(> img:only-child) img {
+      align-self: center;
+      margin-bottom: 16px;
     }
     
     table {
@@ -253,12 +264,15 @@ ${bodyContent}
     return isPunctuationAtEndAndWithinLength($1) ?  `<p class="${afterImgClassIsName ? "img-name" : "list-style"}">${$1}</p>` : $0;
   })
   .replace(/<p>([^<]{1,30})<\/p>/g, function($0, $1, $2) {
-    console.log($1, $0, "==========", $2)
     // 把 h 后符合条件的 p 标签设置为 list-style 样式
     return isPunctuationAtEndAndWithinLength($1) ? `<p class="list-style">${$1}</p>` : $0;
   })
   // 去掉 table 中的样式
   .replace(/<table[\S\s]*?<\/table>/g, ($0, $1) => {
     return $0.replace(/ class="list-style"/g, "");
+  })
+  .replace(/<p>((?:\s*<img[^>]*>\s*)+)<\/p>/g, function(match, p1) {
+    // 如果<p>标签内只有<img>标签，则给<p>标签添加class
+    return `<p class="has-only-img">${p1}</p>`;
   });
 };
