@@ -1,8 +1,8 @@
 <template>
   <div class="text-shadow">
     <div class="test1">文字阴影 text-shadow</div>
-    <div class="test2">文字阴影 text-shadow</div>
-    <div class="test3">文字阴影 text-shadow</div>
+    <div class="test2">文字阴影 text-stroke</div>
+    <div class="test3">文字阴影 stroke + after</div>
   </div>
 </template>
 
